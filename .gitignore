@@ -1,0 +1,15 @@
+node_modules/
+dist/
+*.local
+.DS_Store
+.vite/
+
+# 第三方素材：用户自行下载放入（许可多禁止再分发）。仓库只带程序化兜底，绝不提交第三方图。
+public/assets/character/
+public/assets/tiles/
+public/assets/furniture/
+
+# 本地开发/自测脚本产物
+shot.mjs
+shot-panel.mjs
+dl.mjs
