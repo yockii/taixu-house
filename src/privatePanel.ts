@@ -14,6 +14,7 @@
 // ============================================================================
 
 import type { LifeClient, Thought } from './sdk';
+import { t } from './i18n';
 
 const KIND_ICON: Record<string, string> = {
   speech: '💬', reflection: '✨', intent: '🎯', memory: '📎',
@@ -72,7 +73,7 @@ export class PrivatePanel {
     });
 
     const head = el('div', { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' });
-    head.appendChild(el('div', { fontSize: '17px', color: '#9fb6ec' }, authed ? '🔓 私密房间' : '🔒 私密房间'));
+    head.appendChild(el('div', { fontSize: '17px', color: '#9fb6ec' }, authed ? t('panel.titleUnlocked') : t('panel.titleLocked')));
     const closeBtn = btn('✕', () => this.close());
     closeBtn.style.background = 'transparent';
     closeBtn.style.border = 'none';
@@ -89,12 +90,12 @@ export class PrivatePanel {
   }
 
   private renderUnlock() {
-    this.bodyEl.appendChild(el('div', { color: '#aab', fontSize: '13px', lineHeight: '1.6', marginBottom: '14px' },
-      '这里收纳了生命的私密内容——内心独白、对话往来，以及与它对话的能力。\n需要访问令牌才能进入（本地生命通常无需令牌，留空直接解锁即可）。'));
+    this.bodyEl.appendChild(el('div', { color: '#aab', fontSize: '13px', lineHeight: '1.6', marginBottom: '14px', whiteSpace: 'pre-line' },
+      t('panel.intro')));
 
     const input = document.createElement('input');
     input.type = 'password';
-    input.placeholder = '访问令牌（本地留空）';
+    input.placeholder = t('panel.tokenPlaceholder');
     Object.assign(input.style, {
       width: '100%', boxSizing: 'border-box', padding: '10px', marginBottom: '12px',
       background: '#11111a', border: '1px solid #444', borderRadius: '6px',
@@ -109,16 +110,16 @@ export class PrivatePanel {
       this.onUnlock(input.value.trim());        // 让场景带令牌重连事件流
       this.render();
     };
-    const b = btn('解锁进入', unlock);
+    const b = btn(t('panel.unlock'), unlock);
     b.style.width = '100%';
     this.bodyEl.appendChild(b);
   }
 
   private renderUnlocked() {
     // 对话交互
-    this.bodyEl.appendChild(section('💬 与生命对话'));
+    this.bodyEl.appendChild(section(t('panel.talkTitle')));
     const ta = document.createElement('textarea');
-    ta.placeholder = '对它说点什么…（生命会感知并即时回应）';
+    ta.placeholder = t('panel.talkPlaceholder');
     Object.assign(ta.style, {
       width: '100%', boxSizing: 'border-box', height: '60px', padding: '10px',
       background: '#11111a', border: '1px solid #444', borderRadius: '6px',
@@ -127,16 +128,16 @@ export class PrivatePanel {
     this.bodyEl.appendChild(ta);
     const sendRow = el('div', { display: 'flex', gap: '8px', margin: '8px 0 18px' });
     const status = el('span', { color: '#888', fontSize: '12px', alignSelf: 'center' });
-    const send = btn('发送', async () => {
+    const send = btn(t('panel.send'), async () => {
       const text = ta.value.trim();
       if (!text) return;
-      status.textContent = '发送中…';
+      status.textContent = t('panel.sending');
       try {
         await this.client.talk(text);
         ta.value = '';
-        status.textContent = '已送达，生命正在感知';
+        status.textContent = t('panel.sent');
       } catch (err) {
-        status.textContent = '发送失败：' + (err as Error).message;
+        status.textContent = t('panel.sendFail') + (err as Error).message;
       }
     });
     sendRow.appendChild(send);
@@ -144,7 +145,7 @@ export class PrivatePanel {
     this.bodyEl.appendChild(sendRow);
 
     // 内心独白（实时 thought）
-    this.bodyEl.appendChild(section('🧠 内心独白（实时）'));
+    this.bodyEl.appendChild(section(t('panel.monologueTitle')));
     this.thoughtLog = el('div', {
       maxHeight: '180px', overflow: 'auto', padding: '8px',
       background: '#11111a', border: '1px solid #333', borderRadius: '6px',
@@ -156,14 +157,13 @@ export class PrivatePanel {
     this.client.snapshot().then((snap) => {
       if (!this.thoughtLog) return;
       if (!snap.thoughts?.length) {
-        this.thoughtLog.appendChild(el('div', { color: '#666' }, '（暂无，等生命产生想法…）'));
+        this.thoughtLog.appendChild(el('div', { color: '#666' }, t('panel.monologueEmpty')));
         return;
       }
       for (const t of snap.thoughts) this.appendThought(t);
     }).catch(() => {
       if (this.thoughtLog) {
-        this.thoughtLog.appendChild(el('div', { color: '#e08868' },
-          '读取失败：该生命可能要求令牌。点右上 ✕ 关闭后重进、填入正确令牌。'));
+        this.thoughtLog.appendChild(el('div', { color: '#e08868' }, t('panel.readFail')));
       }
     });
   }

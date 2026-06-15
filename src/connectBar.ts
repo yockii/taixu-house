@@ -8,6 +8,8 @@
 // 纯 DOM 浮层，与 Phaser 画布并存。
 // ============================================================================
 
+import { t } from './i18n';
+
 export class ConnectBar {
   private input: HTMLInputElement;
   private dot: HTMLSpanElement;
@@ -28,7 +30,7 @@ export class ConnectBar {
 
     this.input = document.createElement('input');
     this.input.value = initialURL;
-    this.input.placeholder = 'http://localhost:3000';
+    this.input.placeholder = t('connect.placeholder');
     this.input.spellcheck = false;
     Object.assign(this.input.style, {
       width: '230px', padding: '6px 8px', background: '#11111a',
@@ -39,7 +41,7 @@ export class ConnectBar {
     bar.appendChild(this.input);
 
     const btn = document.createElement('button');
-    btn.textContent = '连接';
+    btn.textContent = t('connect.button');
     Object.assign(btn.style, {
       padding: '6px 14px', background: '#3a5fb0', border: 'none', borderRadius: '5px',
       color: '#fff', fontFamily: 'monospace', fontSize: '12px', cursor: 'pointer',

@@ -4,6 +4,7 @@ import { ROOMS, roomForDomain, PRIVATE_ROOM, type RoomDef } from '../rooms';
 import { RUNTIME_URL, RUNTIME_TOKEN, VIEW } from '../config';
 import { PrivatePanel } from '../privatePanel';
 import { ConnectBar } from '../connectBar';
+import { t } from '../i18n';
 
 interface RoomView {
   def: RoomDef;
@@ -81,8 +82,8 @@ export default class HouseScene extends Phaser.Scene {
   }
 
   private drawTitle() {
-    this.add.text(PLAN.x, 8, '太虚 · 生命小屋', { fontFamily: 'monospace', fontSize: '18px', color: '#f0e6d8' });
-    this.statusText = this.add.text(VIEW.width - 24, 12, '连接中…', { fontFamily: 'monospace', fontSize: '12px', color: '#888' }).setOrigin(1, 0);
+    this.add.text(PLAN.x, 8, t('title'), { fontFamily: 'monospace', fontSize: '18px', color: '#f0e6d8' });
+    this.statusText = this.add.text(VIEW.width - 24, 12, t('status.connecting'), { fontFamily: 'monospace', fontSize: '12px', color: '#888' }).setOrigin(1, 0);
     this.intentText = this.add.text(PLAN.x, VIEW.height - 22, '', {
       fontFamily: 'monospace', fontSize: '12px', color: '#c9b89a', wordWrap: { width: VIEW.width - PLAN.x * 2 },
     });
@@ -104,7 +105,7 @@ export default class HouseScene extends Phaser.Scene {
       fontFamily: 'monospace', fontSize: '11px', color: '#f0e6d2', lineSpacing: 2,
     });
     const ws = this.rooms['workshop'];
-    this.shelfText = this.add.text(ws.x + 12, ws.floorTop + 14, '（加载中…）', {
+    this.shelfText = this.add.text(ws.x + 12, ws.floorTop + 14, t('shelf.loading'), {
       fontFamily: 'monospace', fontSize: '10px', color: '#cdebd6', lineSpacing: 2, wordWrap: { width: ws.w - 24 },
     });
   }
@@ -137,8 +138,8 @@ export default class HouseScene extends Phaser.Scene {
     this.drawFurniture(def, x, floorTop, w, h - PLAN.wallH);
 
     // 名牌（挂在背墙上）
-    this.add.rectangle(x + 8, y + 12, 94, 18, 0x000000, 0.4).setOrigin(0, 0);
-    this.add.text(x + 12, y + 13, def.name, { fontFamily: 'monospace', fontSize: '13px', color: rgb(def.accent) });
+    this.add.rectangle(x + 8, y + 12, 104, 18, 0x000000, 0.4).setOrigin(0, 0);
+    this.add.text(x + 12, y + 13, t('room.' + def.id), { fontFamily: 'monospace', fontSize: '13px', color: rgb(def.accent) });
 
     const rect = this.add.rectangle(x, y, w, h, 0, 0).setOrigin(0, 0).setStrokeStyle(2, def.accent, 0.0);
     const rv: RoomView = { def, x, y, w, h, floorTop, cx: x + w / 2, cy: floorTop + (h - PLAN.wallH) * 0.62, rect };
@@ -240,9 +241,9 @@ export default class HouseScene extends Phaser.Scene {
     g.lineStyle(2, 0x44263a, 1); g.strokeRect(cx - 34, baseY - 48, 68, 40);
     g.fillStyle(0xe6c24a, 1); g.fillCircle(cx, baseY - 28, 6);
 
-    this.add.rectangle(x + 8, y + 12, 94, 18, 0x000000, 0.4).setOrigin(0, 0);
-    this.add.text(x + 12, y + 13, def.name, { fontFamily: 'monospace', fontSize: '13px', color: rgb(def.accent) });
-    this.add.text(cx, baseY - 64, '🔒 点击进入', { fontFamily: 'monospace', fontSize: '12px', color: '#e8b8d0' }).setOrigin(0.5).setDepth(4);
+    this.add.rectangle(x + 8, y + 12, 104, 18, 0x000000, 0.4).setOrigin(0, 0);
+    this.add.text(x + 12, y + 13, t('room.private'), { fontFamily: 'monospace', fontSize: '13px', color: rgb(def.accent) });
+    this.add.text(cx, baseY - 64, t('private.enter'), { fontFamily: 'monospace', fontSize: '12px', color: '#e8b8d0' }).setOrigin(0.5).setDepth(4);
 
     const hit = this.add.rectangle(x, y, w, h, 0, 0).setOrigin(0, 0).setInteractive({ useHandCursor: true });
     hit.on('pointerdown', () => this.panel.show());
@@ -288,7 +289,7 @@ export default class HouseScene extends Phaser.Scene {
       this.applyVitals(snap.vitals);
       if (snap.thoughts?.length) this.showThought(snap.thoughts[snap.thoughts.length - 1]);
     } catch (e) {
-      this.statusText.setText('快照失败（runtime 未连？）').setColor('#e08868');
+      this.statusText.setText(t('status.snapshotFailed')).setColor('#e08868');
     }
     this.refreshShelf();
     this.connectStream();
@@ -297,8 +298,8 @@ export default class HouseScene extends Phaser.Scene {
   private connectStream() {
     this.client.disconnect();
     this.client.connect({
-      open: () => { this.statusText.setText('● 已连接').setColor('#9fe0b8'); this.connectBar.setStatus(true); },
-      error: () => { this.statusText.setText('○ 重连中…').setColor('#e08868'); this.connectBar.setStatus(false); },
+      open: () => { this.statusText.setText(t('status.connected')).setColor('#9fe0b8'); this.connectBar.setStatus(true); },
+      error: () => { this.statusText.setText(t('status.reconnecting')).setColor('#e08868'); this.connectBar.setStatus(false); },
       presence: (p) => this.applyPresence(p.domain, p.intent),
       vitals: (v) => this.applyVitals(v),
       thought: (t) => { this.showThought(t); this.panel.pushThought(t); },
@@ -309,14 +310,14 @@ export default class HouseScene extends Phaser.Scene {
   async switchRuntime(url: string, token?: string) {
     this.client.setBaseURL(url);
     this.client.setToken(token ?? '');
-    this.statusText.setText('切换中…').setColor('#e0c068');
+    this.statusText.setText(t('status.switching')).setColor('#e0c068');
     await this.bootstrap();
   }
 
   private async refreshShelf() {
     const skills = await this.client.skills();
     const names = skills.map((s: any) => s?.name ?? s?.skill_name ?? s?.id ?? '?').slice(0, 6);
-    this.shelfText.setText('🗄 ' + (names.length ? names.map((n: string) => n).join('\n   ') : '（暂无技能）'));
+    this.shelfText.setText('🗄 ' + (names.length ? names.map((n: string) => n).join('\n   ') : t('shelf.empty')));
   }
 
   private applyPresence(domain: Domain, intent: string) {
@@ -342,9 +343,9 @@ export default class HouseScene extends Phaser.Scene {
       return '█'.repeat(f) + '░'.repeat(8 - f);
     };
     this.vitalsText.setText([
-      `体力 ${bar(v.energy)}`, `社交 ${bar(v.social_need)}`, `压力 ${bar(v.stress)}`,
-      `自信 ${bar(v.confidence)}`, `动机 ${bar(v.motivation)}`, `满足 ${bar(v.satisfaction)}`,
-      `焦虑 ${bar(v.anxiety)}`, `灵韵 ${v.wealth?.toFixed?.(0) ?? '0'}`,
+      `${t('vital.energy')} ${bar(v.energy)}`, `${t('vital.social')} ${bar(v.social_need)}`, `${t('vital.stress')} ${bar(v.stress)}`,
+      `${t('vital.confidence')} ${bar(v.confidence)}`, `${t('vital.motivation')} ${bar(v.motivation)}`, `${t('vital.satisfaction')} ${bar(v.satisfaction)}`,
+      `${t('vital.anxiety')} ${bar(v.anxiety)}`, `${t('vital.wealth')} ${v.wealth?.toFixed?.(0) ?? '0'}`,
     ].join('\n'));
   }
 
