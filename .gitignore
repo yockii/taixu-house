@@ -4,9 +4,10 @@ dist/
 .DS_Store
 .vite/
 
-# 背景图与配置：用户自定义（AI生成/手绘），大文件且每人不同，不提交。
-# 仓库不带任何背景图，运行时缺失则显示占位提示。
-public/assets/office_bg*.png
+# 背景图：office_bg.png 已纳入仓库（含 layout 扩展信息，勿压缩/勿转 webp）。
+# 其余临时/变体文件（.original / .with-layout 等）仍按用户私有处理，不提交。
+public/assets/office_bg.original.png
+public/assets/office_bg.with-layout.png
 public/assets/layout.json
 
 # 第三方素材：用户自行下载放入（许可多禁止再分发）。仓库只带程序化兜底，绝不提交第三方图。
