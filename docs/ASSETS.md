@@ -62,6 +62,61 @@ public/assets/
 
 ---
 
+## 进阶：atlas 图集接入（一张大图 + JSON 帧坐标）
+
+单图管线（上面的 `furniture/<id>.png` 槽位）适合「每件裁成独立 PNG」。
+但主流像素素材包（LimeZu / Star Office 等）通常是 **atlas**——多件拼在一张大 PNG 里，
+外加一份 JSON 描述每件的坐标。本项目也支持直接吃 atlas，省去逐件裁图。
+
+### 放置文件
+
+```
+public/assets/atlas/
+├── atlas.png      # 大图（多件拼图）
+└── atlas.json     # Phaser atlas JSON（frames 列表）
+```
+
+放进这两个文件即可，刷新浏览器自动生效。`.gitignore` 已忽略整个 `assets/`，不会被提交。
+
+### 帧命名约定（渲染按名查询）
+
+| 逻辑名 | 用途 | 说明 |
+|---|---|---|
+| `furniture/<roomId>` | 整房间家具图 | 如 `furniture/study`，居中摆放、自动限高。命中后该房间不再程序化画家具 |
+| `character/walk/down/0`、`/1`… | 行走动画帧 | 多帧自动播放（8fps）。如只放单帧 `character/walk/down` 也行（静态） |
+
+查询是**容错匹配**：精确名 → 前缀（`furniture/bookshelf` 命中 `furniture/.../bookshelf`）→ 后缀。所以你不必严格对齐命名，接近即可。
+
+### atlas.json 格式示例（Phaser 标准）
+
+```json
+{
+  "frames": [
+    { "filename": "furniture/study", "frame": { "x": 0,  "y": 0, "w": 96, "h": 80 } },
+    { "filename": "furniture/lounge", "frame": { "x": 96, "y": 0, "w": 120, "h": 96 } },
+    { "filename": "character/walk/down/0", "frame": { "x": 0, "y": 80, "w": 16, "h": 24 } },
+    { "filename": "character/walk/down/1", "frame": { "x": 16, "y": 80, "w": 16, "h": 24 } }
+  ]
+}
+```
+
+> 多数素材包自带 atlas.json（TexturePacker / ShoeBox / LimeZu 原生格式）。
+> 若你的素材只有大图没有 JSON，用 [TexturePacker](https://www.codeandweb.com/texturepacker)（有免费版）
+> 或 [Free Texture Packer](http://free-tex-packer.com/) 生成 Phaser JSON。
+
+### 优先级
+
+渲染时每个绘制点按这个顺序找图，任一命中即用，全 miss 才程序化：
+1. atlas 帧（`furniture/<id>` 等）
+2. 单图槽位（`furniture/<id>.png`）
+3. 程序化兜底
+
+所以你可以**只替换一部分**：比如只丢一个 `furniture/study` atlas 帧升级书房，其余房间继续程序化，互不影响。
+
+---
+
+
+
 ## 它如何回退（实现参考）
 
 `src/scenes/HouseScene.ts`：

@@ -92,29 +92,71 @@ Full fields, the activity-domain vocabulary, and the auth model are in **[docs/I
 ```
 src/
   sdk.ts              ★ Life SDK client reference implementation (framework-agnostic, reusable)
-  rooms.ts              consumer-side custom dimension: domain→room mapping (proof of neutrality; drop or swap it)
+  rooms.ts              default room layout (fallback); semantic domain→room mapping
+  layout.ts             waypoint-graph config: load (localStorage > PNG > default) + pathfinding
   config.ts             runtime address / token (read from the URL)
   scenes/HouseScene.ts  Phaser scene: renders SDK events into the pixel house
-  main.ts               Phaser bootstrap
+  scenes/hud.ts         DOM HUD (always-crisp text overlaid on the canvas)
+  editor/               the layout editor (separate page)
+  editor/pngMeta.ts     read PNG tEXt chunk (embedded layout config)
 docs/
   INTEGRATION.md        deep integration docs (event contract / auth / custom-UI guide)
+scripts/
+  embed-png.mjs         embed layout.json into a PNG's tEXt chunk (lossless)
 ```
 
 Building your own UI? **Copying `src/sdk.ts` is enough** — everything else is implementation detail of this one "house" presentation.
 
 ---
 
-## Nicer visuals (optional)
+## Visuals: background image + waypoint graph
 
-The repo ships **procedural drawing** (isometric 2.5D house, zero third-party copyright, runs out of the box). Want hand-drawn pixel art like Star Office / LimeZu? There's a built-in **sprite slot + procedural fallback**: drop assets into `public/assets/` and it auto-upgrades without breaking. See **[docs/ASSETS.md](docs/ASSETS.md)** (recommended free asset packs + licensing notes + naming conventions).
+The house is rendered as a **static background image** (`public/assets/office_bg.png`) plus a tiny **waypoint graph** that tells the code where the life stands and how it walks between rooms. No procedural drawing, no isometric math — the art is whatever you put in the image, the code only moves a sprite along the graph.
 
-> Most asset packs forbid "standalone redistribution", so the repo bundles none and `.gitignore`s assets — downloading them locally for your own use is fine, but public redistribution requires CC0.
+This means **anyone can re-skin the house without touching code**:
+
+1. Generate a pixel-art room image with AI (or draw one) — 1280×720, top-down 3/4 view.
+2. Drop it at `public/assets/office_bg.png`.
+3. Open **`/editor.html`** — the built-in layout editor. Draw the waypoint graph on top of your image:
+   - 6 room nodes (tag each with its domain: study / workshop / lounge / social / arcade / private)
+   - connect adjacent rooms with lines
+   - click a line to insert a waypoint (the life walks through it — use this to route around furniture)
+   - drag nodes to align with the actual room positions in your image
+4. **Save** (to the browser) and refresh — the life now walks your layout.
+5. **Export** `layout.json`, then embed it into the PNG so the image is self-contained (see below).
+
+### Embedding the layout into the PNG (self-contained distribution)
+
+The layout can be embedded into the PNG itself as a standard `tEXt` chunk (key `taixu-layout`). A PNG that carries its own layout needs **no extra files** — anyone can drop it in and it just works.
+
+```bash
+# after exporting layout.json from the editor:
+node scripts/embed-png.mjs public/assets/office_bg.png layout.json
+# → produces office_bg.with-layout.png (lossless: original pixels untouched, +~2KB metadata)
+```
+
+**Runtime load priority**: `localStorage` (your in-editor save) > PNG embedded `taixu-layout` > code default (`src/rooms.ts`). So a distributed PNG with embedded layout works out of the box, and any user can still override it locally via the editor.
+
+> Why a script and not the browser? Browsers can read PNG bytes and parse `tEXt`, but can't losslessly rewrite a multi-megabyte PNG download. The Node script does a true lossless insert (just splices a chunk after IHDR). See [`scripts/embed-png.mjs`](scripts/embed-png.mjs).
+
+### Full re-skin → distribute workflow
+
+```
+AI-generate office_bg.png  →  /editor.html draw waypoints  →  export layout.json
+   ↓
+node scripts/embed-png.mjs office_bg.png layout.json   # lossless embed
+   ↓
+share the single office_bg.with-layout.png  →  others drop it in public/assets/ and done
+```
+
+See **[docs/ASSETS.md](docs/ASSETS.md)** for the background-image spec, room-layout conventions, and the AI prompt template (`docs/BG-PROMPT.md`).
 
 ## Tech stack
 
 - [Phaser 4](https://phaser.io) (4.1+, the new WebGL renderer)
-- TypeScript + Vite
-- Procedural pixel drawing (isometric 2.5D); the repo is self-contained with zero third-party copyright; polished assets are opt-in
+- TypeScript + Vite (multi-page: `index.html` house + `editor.html` layout editor)
+- Static background image + waypoint-graph pathfinding (no procedural drawing)
+- DOM HUD (always-crisp text, never blurred by canvas scaling)
 
 ## License
 

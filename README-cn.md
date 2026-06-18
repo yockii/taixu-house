@@ -92,29 +92,71 @@ life.connect({
 ```
 src/
   sdk.ts              ★ Life SDK 客户端参考实现（框架无关，可复用）
-  rooms.ts              消费端自定义维度：domain→房间映射（中立性证明，可删可换）
+  rooms.ts              默认房间布局（兜底）；domain→房间语义映射
+  layout.ts             路点图配置：加载（localStorage > PNG > 默认）+ 寻路
   config.ts             runtime 地址 / 令牌（从 URL 读）
   scenes/HouseScene.ts  Phaser 场景：把 SDK 事件渲染成像素小屋
-  main.ts               Phaser 启动
+  scenes/hud.ts         DOM HUD（叠在画布上、永远清晰的文字）
+  editor/               布局编辑器（独立页面）
+  editor/pngMeta.ts     读取 PNG tEXt chunk（内嵌的布局配置）
 docs/
   INTEGRATION.md        深入对接文档（事件契约 / 鉴权 / 自定义 UI 指南）
+scripts/
+  embed-png.mjs         把 layout.json 嵌入 PNG 的 tEXt chunk（无损）
 ```
 
 想做自己的 UI？**拷走 `src/sdk.ts` 就够了**，其余都是「小屋」这一种呈现的实现细节。
 
 ---
 
-## 升级质感（可选）
+## 视觉：背景图 + 路点图
 
-仓库自带**程序化绘制**（斜视 2.5D 小屋，零第三方版权，开箱即跑）。想要 Star Office / LimeZu 那种手绘像素质感？内置 **sprite 插槽 + 程序化兜底**：把素材丢进 `public/assets/` 即自动升级、不破图。详见 **[docs/ASSETS.md](docs/ASSETS.md)**（含推荐免费素材包 + 授权须知 + 命名约定）。
+小屋由一张**静态背景图**（`public/assets/office_bg.png`）+ 一个微型**路点图**渲染。代码不画任何东西，只负责让小人沿路点图走动——图是什么样，小屋就是什么样。
 
-> 多数素材包禁止「独立再分发」，故仓库不捆绑、`.gitignore` 掉 assets——你本地下载自用合法，公开分发须用 CC0。
+这意味着**任何人都能换肤，不用改代码**：
+
+1. 用 AI 生成一张像素房间图（或自己画）——1280×720，俯瞰 3/4 视角。
+2. 放到 `public/assets/office_bg.png`。
+3. 打开 **`/editor.html`**——内置的布局编辑器。在图上画路点图：
+   - 6 个房间节点（每个标注 domain：书房/工作室/客厅/社交区/游戏区/卧室）
+   - 把相邻的房间用线连起来
+   - 点一条线可插入中转点（小人会经过它——用来绕开家具）
+   - 拖动节点对齐图里的实际房间位置
+4. **保存**（存浏览器）后刷新——小人就按你的布局走了。
+5. **导出** `layout.json`，然后嵌入 PNG 让图自带配置（见下）。
+
+### 把布局嵌入 PNG（自包含分发）
+
+布局可以嵌入 PNG 自身的标准 `tEXt` chunk（键名 `taixu-layout`）。一张自带布局的 PNG **不需要任何额外文件**——任何人放进去就能跑。
+
+```bash
+# 编辑器导出 layout.json 后：
+node scripts/embed-png.mjs public/assets/office_bg.png layout.json
+# → 生成 office_bg.with-layout.png（无损：原始像素不变，仅 +约 2KB 元数据）
+```
+
+**运行时加载优先级**：`localStorage`（你在编辑器存的）> PNG 内嵌的 `taixu-layout` > 代码默认（`src/rooms.ts`）。所以分发的 PNG 自带配置开箱即用，任何用户仍可用编辑器本地覆盖。
+
+> 为什么用脚本而不是浏览器？浏览器能读 PNG 字节、能解析 `tEXt`，但无法无损重写一个几 MB 的 PNG 下载。Node 脚本做的是真正的无损插入（只是在 IHDR 后拼一个 chunk）。见 [`scripts/embed-png.mjs`](scripts/embed-png.mjs)。
+
+### 完整换肤 → 分发工作流
+
+```
+AI 生成 office_bg.png  →  /editor.html 画路点图  →  导出 layout.json
+   ↓
+node scripts/embed-png.mjs office_bg.png layout.json   # 无损嵌入
+   ↓
+分享这一张 office_bg.with-layout.png  →  别人放进 public/assets/ 即可
+```
+
+背景图规格、房间布局约定、AI 绘图提示词见 **[docs/ASSETS.md](docs/ASSETS.md)** 和 **[docs/BG-PROMPT.md](docs/BG-PROMPT.md)**。
 
 ## 技术栈
 
 - [Phaser 4](https://phaser.io)（4.1+，全新 WebGL 渲染器）
-- TypeScript + Vite
-- 程序化像素绘制（斜视 2.5D），仓库自包含、零第三方版权；精致素材为 opt-in
+- TypeScript + Vite（多页面：`index.html` 小屋 + `editor.html` 布局编辑器）
+- 静态背景图 + 路点图寻路（无程序化绘制）
+- DOM HUD（永远清晰的文字，不受画布缩放影响）
 
 ## 许可
 

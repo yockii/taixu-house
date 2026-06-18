@@ -5,13 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Taixu · Life House</title>
     <style>
-      html, body { margin: 0; height: 100%; background: #0e0e12; overflow: hidden; }
+      html, body { margin: 0; height: 100%; background: #14141a; overflow: hidden; }
       #app { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
-      canvas { image-rendering: pixelated; }
+      .edit-link { position: fixed; top: 14px; right: 16px; z-index: 700; font-family: monospace; font-size: 12px; color: #8a7a64; text-decoration: none; }
+      .edit-link:hover { color: #e0c068; }
     </style>
   </head>
   <body>
     <div id="app"></div>
+    <a class="edit-link" href="editor.html">✏ 编辑布局</a>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

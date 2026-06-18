@@ -6,10 +6,6 @@ export const RUNTIME_URL = params.get('runtime') || 'http://localhost:3000';
 export const RUNTIME_TOKEN = params.get('token') || undefined;
 
 export const VIEW = {
-  width: 960,
+  width: 1280,
   height: 720,
-  roomW: 420,
-  roomH: 200,
-  gap: 24,
-  pad: 32,
 };

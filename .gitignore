@@ -4,6 +4,11 @@ dist/
 .DS_Store
 .vite/
 
+# 背景图与配置：用户自定义（AI生成/手绘），大文件且每人不同，不提交。
+# 仓库不带任何背景图，运行时缺失则显示占位提示。
+public/assets/office_bg*.png
+public/assets/layout.json
+
 # 第三方素材：用户自行下载放入（许可多禁止再分发）。仓库只带程序化兜底，绝不提交第三方图。
 public/assets/character/
 public/assets/tiles/
@@ -14,3 +19,6 @@ shot.mjs
 shot-panel.mjs
 dl.mjs
 crop.mjs
+
+# 参考项目（仅供本地研究，不提交）
+related/
