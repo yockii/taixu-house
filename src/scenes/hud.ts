@@ -32,6 +32,26 @@ export class Hud {
     this.titleEl.style.cssText = 'position:absolute;top:14px;left:16px;font-size:15px;color:#9fb6ec;';
     this.root.appendChild(this.titleEl);
 
+    // 标题下方：外部门户（太虚文明 / 太虚生命）
+    // root 设了 pointer-events:none，链接须显式 auto 才能点击；hover 时提亮。
+    const links = document.createElement('div');
+    links.style.cssText = 'position:absolute;top:38px;left:16px;font-size:11px;display:flex;gap:8px;align-items:center;';
+    const mkPortal = (text: string, href: string, color: string, hover: string) => {
+      const a = document.createElement('a');
+      a.href = href; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = text;
+      a.style.cssText = `color:${color};text-decoration:none;opacity:0.75;pointer-events:auto;transition:opacity .12s,color .12s;`;
+      a.addEventListener('mouseenter', () => { a.style.opacity = '1'; a.style.color = hover; });
+      a.addEventListener('mouseleave', () => { a.style.opacity = '0.75'; a.style.color = color; });
+      return a;
+    };
+    links.appendChild(mkPortal('太虚文明', 'https://taixu.icu', '#9fb6ec', '#cdd9f7'));
+    const sep = document.createElement('span');
+    sep.textContent = '·'; sep.style.color = '#555';
+    links.appendChild(sep);
+    links.appendChild(mkPortal('太虚生命', 'https://yockii.github.io/taixu-runtime', '#cdebd6', '#e8f7ee'));
+    this.root.appendChild(links);
+
     // 状态：右上角
     this.statusEl = document.createElement('span');
     this.statusEl.textContent = t('status.connecting');
